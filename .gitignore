@@ -1,0 +1,5 @@
+.idea
+go.work
+go.work.sum
+foxdump.iml
+*.out
