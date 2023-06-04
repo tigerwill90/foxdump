@@ -47,7 +47,7 @@ func main() {
 }
 ````
 
-Note that the 'req' and 'res' byte slices are transient, and their data is only guaranteed to be valid
-during the execution of the BodyDumpHandler function. If the data needs to be persisted or
-used outside the scope of this function, it should be copied to a new byte slice (e.g., using 'copy').
+Note that the `req` and `res` byte slices are transient, and their data is only guaranteed to be valid
+during the execution of the `BodyDumpHandler` function. If the data needs to be persisted or
+used outside the scope of this function, it should be copied to a new byte slice (e.g., using `copy`).
 Furthermore, these slices should be treated as read-only to prevent any unintended side effects.
