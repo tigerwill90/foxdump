@@ -25,29 +25,37 @@ Here's a simple example of how to use the Foxdump middleware:
 package main
 
 import (
-	"github.com/tigerwill90/foxdump"
 	"github.com/tigerwill90/fox"
+	"github.com/tigerwill90/foxdump"
+	"io"
 	"log"
 	"net/http"
 )
 
+func DumpRequest(c fox.Context, buf []byte) {
+	log.Println("request:", string(buf))
+}
+
+func DumpResponse(c fox.Context, buf []byte) {
+	log.Println("response:", string(buf))
+}
+
 func main() {
+
 	f := fox.New(
-		fox.WithMiddleware(foxdump.Middleware(func(c fox.Context, req, res []byte) {
-			log.Printf("Request Body: %s\n", string(req))
-			log.Printf("Response Body: %s\n", string(res))
-		})),
+		fox.WithMiddleware(foxdump.Middleware(DumpRequest, DumpResponse)),
 	)
 
-	f.MustHandle(http.MethodGet, "/hello/{name}", func(c fox.Context) {
-		_ = c.String(http.StatusOK, "hello %s", c.Param("name"))
+	f.MustHandle(http.MethodPost, "/hello/fox", func(c fox.Context) {
+		_, _ = io.Copy(c.Writer(), c.Request().Body)
 	})
 
 	log.Fatalln(http.ListenAndServe(":8080", f))
 }
+
 ````
 
-Note that the 'req' and 'res' byte slices are transient, and their data is only guaranteed to be valid
-during the execution of the BodyDumpHandler function. If the data needs to be persisted or
-used outside the scope of this function, it should be copied to a new byte slice (e.g., using 'copy').
-Furthermore, these slices should be treated as read-only to prevent any unintended side effects.
+Note that the `buf` slice is transient, and its data is only guaranteed to be valid during the execution of the 
+`foxdump.BodyHandler` function. If the data needs to be persisted or used outside the scope of this function, it should be copied 
+to a new byte slice (e.g., using `copy`). Furthermore, `buf` should be treated as read-only to prevent any unintended 
+side effects.

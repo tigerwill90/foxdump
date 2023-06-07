@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/labstack/echo/v4 v4.10.2
-	github.com/tigerwill90/fox v0.8.1
+	github.com/tigerwill90/fox v0.9.0
 )
 
 require (

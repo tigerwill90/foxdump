@@ -20,8 +20,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
-github.com/tigerwill90/fox v0.8.1 h1:KuJGb807zGlQomhq8+7QfezSUlsLKEYW4c9IUsEVX2Y=
-github.com/tigerwill90/fox v0.8.1/go.mod h1:MdAVSWOSSlp+MExhsvqWF1kedhAnMsV90VTcaaQdKWo=
+github.com/tigerwill90/fox v0.9.0 h1:pju1wpZGo8hWwhbCuVNbeXlbjX7AGfO9xKCgib2H3iE=
+github.com/tigerwill90/fox v0.9.0/go.mod h1:frBRK49d4TXcELy3911opGU3RZQSUq++BHQUwhykpQw=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.2.1/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+qRAEEKiv+SiQ=
