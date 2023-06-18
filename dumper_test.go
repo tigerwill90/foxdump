@@ -156,10 +156,7 @@ func TestWithFilter(t *testing.T) {
 		{
 			name: "filter match req",
 			filter: func(r *http.Request) bool {
-				if r.URL.Path == "/foo" {
-					return false
-				}
-				return true
+				return r.URL.Path != "/foo"
 			},
 			res: failBodyHandler,
 			req: failBodyHandler,
@@ -167,10 +164,7 @@ func TestWithFilter(t *testing.T) {
 		{
 			name: "filter does not match req",
 			filter: func(r *http.Request) bool {
-				if r.URL.Path == "/bar" {
-					return false
-				}
-				return true
+				return r.URL.Path != "/bar"
 			},
 			res: func(t *testing.T, want []byte) BodyHandler {
 				return func(c fox.Context, buf []byte) {
