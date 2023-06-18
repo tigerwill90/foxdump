@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"github.com/tigerwill90/fox"
 	"io"
-	"net/http"
+	"log"
 	"sync"
 )
 
@@ -71,7 +71,8 @@ func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
 		if d.req != nil {
 			_, err := buf.ReadFrom(c.Request().Body)
 			if err != nil {
-				http.Error(c.Writer(), http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				log.Println("body dumper: unexpected error while reading request body")
+				next(c)
 				return
 			}
 

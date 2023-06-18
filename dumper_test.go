@@ -1,9 +1,10 @@
 package foxdump
 
 import (
+	"bytes"
 	"crypto/rand"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tigerwill90/fox"
 	"io"
 	"net/http"
@@ -44,7 +45,7 @@ func (r *repeatReader) Read(p []byte) (n int, err error) {
 
 func (r *repeatReader) Close() error { return nil }
 
-func BenchmarkMiddleware(b *testing.B) {
+func BenchmarkFoxDumpMiddleware(b *testing.B) {
 	f := fox.New(fox.WithMiddleware(Middleware(func(c fox.Context, buf []byte) {
 
 	}, func(c fox.Context, buf []byte) {
@@ -52,7 +53,7 @@ func BenchmarkMiddleware(b *testing.B) {
 	})))
 
 	buf := make([]byte, 1*1024)
-	rand.Read(buf)
+	_, _ = rand.Read(buf)
 
 	f.MustHandle(http.MethodPost, "/foo/bar", func(c fox.Context) {
 		_, _ = c.Writer().Write(buf)
@@ -71,29 +72,135 @@ func BenchmarkMiddleware(b *testing.B) {
 	}
 }
 
-func BenchmarkEchoDumpMiddleware(b *testing.B) {
-	e := echo.New()
-	e.Use(middleware.BodyDump(func(context echo.Context, bytes []byte, bytes2 []byte) {
-
-	}))
-
-	buf := make([]byte, 1*1024)
-	rand.Read(buf)
-
-	e.POST("/foo/bar", func(c echo.Context) error {
-		_, _ = c.Response().Write(buf)
+func TestBodyDumper_DumpBody(t *testing.T) {
+	var nilBodyHandler = func(t *testing.T, want []byte) BodyHandler {
 		return nil
-	})
+	}
 
-	body := &repeatReader{data: buf}
-	req := httptest.NewRequest(http.MethodPost, "/foo/bar", nil)
-	w := new(mockResponseWriter)
+	cases := []struct {
+		name string
+		req  func(t *testing.T, want []byte) BodyHandler
+		res  func(t *testing.T, want []byte) BodyHandler
+	}{
+		{
+			name: "dump request only",
+			req: func(t *testing.T, want []byte) BodyHandler {
+				return func(c fox.Context, buf []byte) {
+					assert.Equal(t, want, buf)
+				}
+			},
+			res: nilBodyHandler,
+		},
+		{
+			name: "dump response only",
+			req:  nilBodyHandler,
+			res: func(t *testing.T, want []byte) BodyHandler {
+				return func(c fox.Context, buf []byte) {
+					assert.Equal(t, want, buf)
+				}
+			},
+		},
+		{
+			name: "dump request and response",
+			req: func(t *testing.T, want []byte) BodyHandler {
+				return func(c fox.Context, buf []byte) {
+					assert.Equal(t, want, buf)
+				}
+			},
+			res: func(t *testing.T, want []byte) BodyHandler {
+				return func(c fox.Context, buf []byte) {
+					assert.Equal(t, want, buf)
+				}
+			},
+		},
+		{
+			name: "both nil req and res",
+			req:  nilBodyHandler,
+			res:  nilBodyHandler,
+		},
+	}
 
-	b.ReportAllocs()
-	b.ResetTimer()
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			buf := make([]byte, 1*1024*1024)
+			_, err := rand.Read(buf)
+			require.NoError(t, err)
 
-	for i := 0; i < b.N; i++ {
-		req.Body = body
-		e.ServeHTTP(w, req)
+			f := fox.New(fox.WithMiddleware(Middleware(tc.req(t, buf), tc.res(t, buf))))
+			require.NoError(t, f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
+				assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
+			}))
+
+			req := httptest.NewRequest(http.MethodPost, "/foo", bytes.NewReader(buf))
+			w := httptest.NewRecorder()
+			f.ServeHTTP(w, req)
+			assert.Equal(t, buf, w.Body.Bytes())
+		})
+	}
+}
+
+func TestWithFilter(t *testing.T) {
+	var failBodyHandler = func(t *testing.T, want []byte) BodyHandler {
+		return func(c fox.Context, buf []byte) {
+			t.Error("should not be call")
+		}
+	}
+
+	cases := []struct {
+		name   string
+		filter Filter
+		req    func(t *testing.T, want []byte) BodyHandler
+		res    func(t *testing.T, want []byte) BodyHandler
+	}{
+		{
+			name: "filter match req",
+			filter: func(r *http.Request) bool {
+				if r.URL.Path == "/foo" {
+					return false
+				}
+				return true
+			},
+			res: failBodyHandler,
+			req: failBodyHandler,
+		},
+		{
+			name: "filter does not match req",
+			filter: func(r *http.Request) bool {
+				if r.URL.Path == "/bar" {
+					return false
+				}
+				return true
+			},
+			res: func(t *testing.T, want []byte) BodyHandler {
+				return func(c fox.Context, buf []byte) {
+					assert.Equal(t, want, buf)
+				}
+			},
+			req: func(t *testing.T, want []byte) BodyHandler {
+				return func(c fox.Context, buf []byte) {
+					assert.Equal(t, want, buf)
+				}
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			buf := make([]byte, 1*1024*1024)
+			_, err := rand.Read(buf)
+			require.NoError(t, err)
+
+			f := fox.New(fox.WithMiddleware(Middleware(tc.req(t, buf), tc.res(t, buf), WithFilter(tc.filter))))
+			require.NoError(t, f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
+				assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
+			}))
+
+			req := httptest.NewRequest(http.MethodPost, "/foo", bytes.NewReader(buf))
+			w := httptest.NewRecorder()
+			f.ServeHTTP(w, req)
+			assert.Equal(t, buf, w.Body.Bytes())
+		})
 	}
 }

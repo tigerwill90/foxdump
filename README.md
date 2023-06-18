@@ -1,3 +1,10 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/tigerwill90/foxdump.svg)](https://pkg.go.dev/github.com/tigerwill90/foxdump)
+[![tests](https://github.com/tigerwill90/foxdump/actions/workflows/tests.yaml/badge.svg)](https://github.com/tigerwill90/foxdump/actions?query=workflow%3Atests)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tigerwill90/foxdump)](https://goreportcard.com/report/github.com/tigerwill90/foxdump)
+[![codecov](https://codecov.io/gh/tigerwill90/foxdump/branch/master/graph/badge.svg?token=D6qSTlzEcE)](https://codecov.io/gh/tigerwill90/foxdump)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/tigerwill90/foxdump)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/tigerwill90/foxdump)
+
 # Foxdump
 Foxdump is a middleware for [Fox](https://github.com/tigerwill90/fox) that provides an efficient way to dump 
 HTTP request and response bodies. This feature can be extremely useful for debugging, logging, testing, and 
@@ -59,3 +66,13 @@ Note that the `buf` slice is transient, and its data is only guaranteed to be va
 `foxdump.BodyHandler` function. If the data needs to be persisted or used outside the scope of this function, it should be copied 
 to a new byte slice (e.g., using `copy`). Furthermore, `buf` should be treated as read-only to prevent any unintended 
 side effects.
+
+## Benchmark
+````
+goos: linux
+goarch: amd64
+pkg: github.com/tigerwill90/foxdump
+cpu: Intel(R) Core(TM) i9-9900K CPU @ 3.60GHz
+BenchmarkFoxDumpMiddleware-16            7333161             157.9 ns/op               0 B/op          0 allocs/op
+BenchmarkEchoDumpMiddleware-16           1215985              1618 ns/op            2665 B/op         10 allocs/op
+````
