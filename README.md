@@ -48,7 +48,6 @@ func DumpResponse(c fox.Context, buf []byte) {
 }
 
 func main() {
-
 	f := fox.New(
 		fox.WithMiddleware(foxdump.Middleware(DumpRequest, DumpResponse)),
 	)
@@ -59,7 +58,6 @@ func main() {
 
 	log.Fatalln(http.ListenAndServe(":8080", f))
 }
-
 ````
 
 Note that the `buf` slice is transient, and its data is only guaranteed to be valid during the execution of the 
