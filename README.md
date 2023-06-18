@@ -62,7 +62,7 @@ func main() {
 
 Note that the `buf` slice is transient, and its data is only guaranteed to be valid during the execution of the 
 `foxdump.BodyHandler` function. If the data needs to be persisted or used outside the scope of this function, it should be copied 
-to a new byte slice (e.g., using `copy`). Furthermore, `buf` should be treated as read-only to prevent any unintended 
+to a new byte slice (e.g. using `copy`). Furthermore, `buf` should be treated as read-only to prevent any unintended 
 side effects.
 
 ## Benchmark
