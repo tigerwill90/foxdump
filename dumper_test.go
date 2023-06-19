@@ -121,7 +121,6 @@ func TestBodyDumper_DumpBody(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			buf := make([]byte, 1*1024*1024)
 			_, err := rand.Read(buf)
@@ -180,7 +179,6 @@ func TestWithFilter(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			buf := make([]byte, 1*1024*1024)
 			_, err := rand.Read(buf)
