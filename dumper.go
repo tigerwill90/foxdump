@@ -72,8 +72,8 @@ func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
 			_, err := buf.ReadFrom(c.Request().Body)
 			if err != nil {
 				log.Println("body dumper: unexpected error while reading request body")
-				next(c)
-				return
+				buf.Reset()
+				goto RespFallback
 			}
 
 			cpBuf := p.Get().(*bytes.Buffer)
@@ -89,6 +89,7 @@ func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
 			c.Request().Body = nopCloser{cpBuf}
 		}
 
+	RespFallback:
 		if d.res != nil {
 			c.TeeWriter(buf)
 			next(c)
