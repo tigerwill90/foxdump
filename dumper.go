@@ -84,7 +84,7 @@ func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
 			cpBuf.Reset()
 			defer p.Put(cpBuf)
 
-			// Safe as Buffer.Writer make a copy of p
+			// Safe as Buffer.Write make a copy of p
 			cpBuf.Write(buf.Bytes())
 
 			d.req(c, buf.Bytes())
