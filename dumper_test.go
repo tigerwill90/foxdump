@@ -1,8 +1,13 @@
+// Copyright 2023 Sylvain Müller. All rights reserved.
+// Mount of this source code is governed by a MIT license that can be found
+// at https://github.com/tigerwill90/foxdump/blob/master/LICENSE.txt.
+
 package foxdump
 
 import (
 	"bytes"
 	"crypto/rand"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tigerwill90/fox"
@@ -28,6 +33,12 @@ func (m *mockResponseWriter) WriteString(s string) (n int, err error) {
 
 func (m *mockResponseWriter) WriteHeader(int) {}
 
+type errorReader struct{}
+
+func (r *errorReader) Read(p []byte) (n int, err error) {
+	return n, errors.New("error")
+}
+
 type repeatReader struct {
 	data []byte
 	eof  bool
@@ -44,6 +55,12 @@ func (r *repeatReader) Read(p []byte) (n int, err error) {
 }
 
 func (r *repeatReader) Close() error { return nil }
+
+var failBodyHandler = func(t *testing.T, want []byte) BodyHandler {
+	return func(c fox.Context, buf []byte) {
+		t.Error("should not be call")
+	}
+}
 
 func BenchmarkFoxDumpMiddleware(b *testing.B) {
 	f := fox.New(fox.WithMiddleware(Middleware(func(c fox.Context, buf []byte) {
@@ -140,11 +157,6 @@ func TestBodyDumper_DumpBody(t *testing.T) {
 }
 
 func TestWithFilter(t *testing.T) {
-	var failBodyHandler = func(t *testing.T, want []byte) BodyHandler {
-		return func(c fox.Context, buf []byte) {
-			t.Error("should not be call")
-		}
-	}
 
 	cases := []struct {
 		name   string
@@ -195,4 +207,23 @@ func TestWithFilter(t *testing.T) {
 			assert.Equal(t, buf, w.Body.Bytes())
 		})
 	}
+}
+
+func TestBodyDumper_DumpBodyFallback(t *testing.T) {
+	buf := make([]byte, 1*1024*1024)
+	_, err := rand.Read(buf)
+	require.NoError(t, err)
+
+	f := fox.New(fox.WithMiddleware(Middleware(failBodyHandler(t, nil), func(c fox.Context, dump []byte) {
+		assert.Equal(t, buf, dump)
+	})))
+
+	require.NoError(t, f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
+		assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
+	}))
+
+	req := httptest.NewRequest(http.MethodPost, "/foo", new(errorReader))
+	w := httptest.NewRecorder()
+	f.ServeHTTP(w, req)
+	assert.Equal(t, buf, w.Body.Bytes())
 }

@@ -1,3 +1,7 @@
+// Copyright 2023 Sylvain Müller. All rights reserved.
+// Mount of this source code is governed by a MIT license that can be found
+// at https://github.com/tigerwill90/foxdump/blob/master/LICENSE.txt.
+
 package foxdump
 
 import (
@@ -72,15 +76,15 @@ func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
 			_, err := buf.ReadFrom(c.Request().Body)
 			if err != nil {
 				log.Println("body dumper: unexpected error while reading request body")
-				next(c)
-				return
+				buf.Reset()
+				goto RespFallback
 			}
 
 			cpBuf := p.Get().(*bytes.Buffer)
 			cpBuf.Reset()
 			defer p.Put(cpBuf)
 
-			// Safe as Buffer.Writer make a copy of p
+			// Safe as Buffer.Write make a copy of p
 			cpBuf.Write(buf.Bytes())
 
 			d.req(c, buf.Bytes())
@@ -89,6 +93,7 @@ func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
 			c.Request().Body = nopCloser{cpBuf}
 		}
 
+	RespFallback:
 		if d.res != nil {
 			c.TeeWriter(buf)
 			next(c)
