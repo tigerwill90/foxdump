@@ -14,7 +14,9 @@ import (
 
 var p = sync.Pool{
 	New: func() any {
-		return bytes.NewBuffer(nil)
+		return &multiWriter{
+			buf: bytes.NewBuffer(nil),
+		}
 	},
 }
 
@@ -68,36 +70,37 @@ func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
 			}
 		}
 
-		buf := p.Get().(*bytes.Buffer)
-		buf.Reset()
-		defer p.Put(buf)
+		mw := p.Get().(*multiWriter)
+		mw.buf.Reset()
+		defer p.Put(mw)
 
 		if d.req != nil {
-			_, err := buf.ReadFrom(c.Request().Body)
+			_, err := mw.buf.ReadFrom(c.Request().Body)
 			if err != nil {
 				log.Println("body dumper: unexpected error while reading request body")
-				buf.Reset()
+				mw.buf.Reset()
 				goto RespFallback
 			}
 
-			cpBuf := p.Get().(*bytes.Buffer)
-			cpBuf.Reset()
-			defer p.Put(cpBuf)
+			cpMw := p.Get().(*multiWriter)
+			cpMw.buf.Reset()
+			defer p.Put(cpMw)
 
 			// Safe as Buffer.Write make a copy of p
-			cpBuf.Write(buf.Bytes())
+			cpMw.buf.Write(mw.buf.Bytes())
 
-			d.req(c, buf.Bytes())
-			buf.Reset()
+			d.req(c, mw.buf.Bytes())
+			mw.buf.Reset()
 
-			c.Request().Body = nopCloser{cpBuf}
+			c.Request().Body = nopCloser{cpMw.buf}
 		}
 
 	RespFallback:
 		if d.res != nil {
-			c.TeeWriter(buf)
+			mw.ResponseWriter = c.Writer()
+			c.SetWriter(mw)
 			next(c)
-			d.res(c, buf.Bytes())
+			d.res(c, mw.buf.Bytes())
 			return
 		}
 
