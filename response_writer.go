@@ -30,10 +30,6 @@ func (w multiWriter) Write(p []byte) (n int, err error) {
 	if err != nil {
 		return
 	}
-	if n != len(p) {
-		err = io.ErrShortWrite
-		return
-	}
 
 	return n, nil
 }
@@ -50,10 +46,6 @@ func (w multiWriter) WriteString(s string) (n int, err error) {
 
 	n, err = w.buf.WriteString(s)
 	if err != nil {
-		return
-	}
-	if n != len(s) {
-		err = io.ErrShortWrite
 		return
 	}
 
