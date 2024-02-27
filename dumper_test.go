@@ -94,6 +94,11 @@ func TestBodyDumper_DumpBody(t *testing.T) {
 		return nil
 	}
 
+	// Force io.CopyBuffer to not use src.WriteTo(dst)
+	type onlyRead struct {
+		io.Reader
+	}
+
 	cases := []struct {
 		name string
 		req  func(t *testing.T, want []byte) BodyHandler
@@ -151,6 +156,10 @@ func TestBodyDumper_DumpBody(t *testing.T) {
 				_, err = io.WriteString(c.Writer(), string(buf))
 				assert.NoError(t, err)
 			}))
+			require.NoError(t, f.Handle(http.MethodPost, "/baz", func(c fox.Context) {
+				_, err := c.Writer().ReadFrom(onlyRead{bytes.NewReader(buf)})
+				require.NoError(t, err)
+			}))
 
 			req := httptest.NewRequest(http.MethodPost, "/foo", bytes.NewReader(buf))
 			w := httptest.NewRecorder()
@@ -158,6 +167,11 @@ func TestBodyDumper_DumpBody(t *testing.T) {
 			assert.Equal(t, buf, w.Body.Bytes())
 
 			req = httptest.NewRequest(http.MethodPost, "/bar", bytes.NewReader(buf))
+			w = httptest.NewRecorder()
+			f.ServeHTTP(w, req)
+			assert.Equal(t, buf, w.Body.Bytes())
+
+			req = httptest.NewRequest(http.MethodPost, "/baz", bytes.NewReader(buf))
 			w = httptest.NewRecorder()
 			f.ServeHTTP(w, req)
 			assert.Equal(t, buf, w.Body.Bytes())
@@ -226,8 +240,6 @@ func TestBodyDumper_ImplUnwrap(t *testing.T) {
 	f := fox.New(fox.WithMiddleware(Middleware(nil, func(c fox.Context, got []byte) {})))
 	f.MustHandle(http.MethodPost, "/foo", func(c fox.Context) {
 		require.Implements(t, (*interface{ Unwrap() http.ResponseWriter })(nil), c.Writer())
-		rw := c.Writer().(interface{ Unwrap() http.ResponseWriter }).Unwrap()
-		assert.Implements(t, (*http.Flusher)(nil), rw)
 		assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
 	})
 

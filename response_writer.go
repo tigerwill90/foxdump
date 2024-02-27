@@ -5,7 +5,19 @@ import (
 	"github.com/tigerwill90/fox"
 	"io"
 	"net/http"
+	"sync"
 )
+
+var copyBufPool = sync.Pool{
+	New: func() any {
+		b := make([]byte, 32*1024)
+		return &b
+	},
+}
+
+type onlyWrite struct {
+	io.Writer
+}
 
 type multiWriter struct {
 	fox.ResponseWriter
@@ -50,4 +62,13 @@ func (w multiWriter) WriteString(s string) (n int, err error) {
 	}
 
 	return n, nil
+}
+
+func (w multiWriter) ReadFrom(src io.Reader) (n int64, err error) {
+	bufp := copyBufPool.Get().(*[]byte)
+	buf := *bufp
+	// onlyWrite hide "ReadFrom" from w.
+	n, err = io.CopyBuffer(onlyWrite{w}, src, buf)
+	copyBufPool.Put(bufp)
+	return
 }
