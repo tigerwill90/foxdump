@@ -2,8 +2,6 @@ module github.com/tigerwill90/foxdump
 
 go 1.21
 
-toolchain go1.22.4
-
 require (
 	github.com/stretchr/testify v1.9.0
 	github.com/tigerwill90/fox v0.14.0
