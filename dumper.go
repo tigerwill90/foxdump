@@ -98,9 +98,10 @@ func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
 	RespFallback:
 		if d.res != nil {
 			mw.ResponseWriter = c.Writer()
-			c.SetWriter(mw)
-			next(c)
-			d.res(c, mw.buf.Bytes())
+			cc := c.CloneWith(mw, c.Request())
+			defer cc.Close()
+			next(cc)
+			d.res(cc, mw.buf.Bytes())
 			return
 		}
 
