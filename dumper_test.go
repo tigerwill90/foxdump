@@ -153,6 +153,7 @@ func TestBodyDumper_DumpBody(t *testing.T) {
 				assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
 			}))
 			require.NoError(t, f.Handle(http.MethodPost, "/bar", func(c fox.Context) {
+				// nolint:staticcheck
 				_, err = io.WriteString(c.Writer(), string(buf))
 				assert.NoError(t, err)
 			}))
