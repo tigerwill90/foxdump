@@ -4,11 +4,15 @@ import (
 	"bufio"
 	"bytes"
 	"github.com/stretchr/testify/assert"
+	"github.com/tigerwill90/fox"
 	"io"
 	"net"
 	"net/http"
 	"testing"
+	"time"
 )
+
+var _ fox.ResponseWriter = (*shortResponseWriter)(nil)
 
 type shortResponseWriter struct{}
 
@@ -45,6 +49,14 @@ func (m shortResponseWriter) FlushError() error { return nil }
 func (m shortResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) { return nil, nil, nil }
 
 func (m shortResponseWriter) Push(target string, opts *http.PushOptions) error { return nil }
+
+func (m shortResponseWriter) SetReadDeadline(deadline time.Time) error {
+	return nil
+}
+
+func (m shortResponseWriter) SetWriteDeadline(deadline time.Time) error {
+	return nil
+}
 
 func TestMultiWriter_RwErrShortWrite(t *testing.T) {
 	mw := multiWriter{new(shortResponseWriter), bytes.NewBuffer(nil)}

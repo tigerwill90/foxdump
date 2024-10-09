@@ -27,8 +27,8 @@ func (f optionFunc) apply(c *config) {
 type Filter func(r *http.Request) bool
 
 // WithFilter appends the provided filters to the middleware's filter list.
-// A filter returning false will exclude the request from being traced. If no filters
-// are provided, all requests will be traced. Keep in mind that filters are invoked for each request,
+// A filter returning true will exclude the request from being dumped. If no filters
+// are provided, all requests will be dumped. Keep in mind that filters are invoked for each request,
 // so they should be simple and efficient.
 func WithFilter(f ...Filter) Option {
 	return optionFunc(func(c *config) {
