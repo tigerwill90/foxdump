@@ -64,7 +64,7 @@ func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
 		}
 
 		for _, f := range d.cfg.filters {
-			if f(c.Request()) {
+			if f(c) {
 				next(c)
 				return
 			}

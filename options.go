@@ -4,7 +4,9 @@
 
 package foxdump
 
-import "net/http"
+import (
+	"github.com/tigerwill90/fox"
+)
 
 type config struct {
 	filters []Filter
@@ -24,7 +26,7 @@ func (f optionFunc) apply(c *config) {
 	f(c)
 }
 
-type Filter func(r *http.Request) bool
+type Filter func(c fox.Context) (skip bool)
 
 // WithFilter appends the provided filters to the middleware's filter list.
 // A filter returning true will exclude the request from being dumped. If no filters
