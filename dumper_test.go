@@ -149,18 +149,18 @@ func TestBodyDumper_DumpBody(t *testing.T) {
 			require.NoError(t, err)
 
 			f := fox.New(fox.WithMiddleware(Middleware(tc.req(t, buf), tc.res(t, buf))))
-			require.NoError(t, f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
+			require.NoError(t, onlyError(f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
 				assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
-			}))
-			require.NoError(t, f.Handle(http.MethodPost, "/bar", func(c fox.Context) {
+			})))
+			require.NoError(t, onlyError(f.Handle(http.MethodPost, "/bar", func(c fox.Context) {
 				// nolint:staticcheck
 				_, err = io.WriteString(c.Writer(), string(buf))
 				assert.NoError(t, err)
-			}))
-			require.NoError(t, f.Handle(http.MethodPost, "/baz", func(c fox.Context) {
+			})))
+			require.NoError(t, onlyError(f.Handle(http.MethodPost, "/baz", func(c fox.Context) {
 				_, err := c.Writer().ReadFrom(onlyRead{bytes.NewReader(buf)})
 				require.NoError(t, err)
-			}))
+			})))
 
 			req := httptest.NewRequest(http.MethodPost, "/foo", bytes.NewReader(buf))
 			w := httptest.NewRecorder()
@@ -190,16 +190,16 @@ func TestWithFilter(t *testing.T) {
 	}{
 		{
 			name: "filter match req",
-			filter: func(r *http.Request) bool {
-				return r.URL.Path == "/foo"
+			filter: func(c fox.Context) bool {
+				return c.Path() == "/foo"
 			},
 			res: failBodyHandler,
 			req: failBodyHandler,
 		},
 		{
 			name: "filter does not match req",
-			filter: func(r *http.Request) bool {
-				return r.URL.Path == "/bar"
+			filter: func(c fox.Context) bool {
+				return c.Path() == "/bar"
 			},
 			res: func(t *testing.T, want []byte) BodyHandler {
 				return func(c fox.Context, buf []byte) {
@@ -221,9 +221,9 @@ func TestWithFilter(t *testing.T) {
 			require.NoError(t, err)
 
 			f := fox.New(fox.WithMiddleware(Middleware(tc.req(t, buf), tc.res(t, buf), WithFilter(tc.filter))))
-			require.NoError(t, f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
+			require.NoError(t, onlyError(f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
 				assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
-			}))
+			})))
 
 			req := httptest.NewRequest(http.MethodPost, "/foo", bytes.NewReader(buf))
 			w := httptest.NewRecorder()
@@ -259,12 +259,16 @@ func TestBodyDumper_DumpBodyFallback(t *testing.T) {
 		assert.Equal(t, buf, dump)
 	})))
 
-	require.NoError(t, f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
+	require.NoError(t, onlyError(f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
 		assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
-	}))
+	})))
 
 	req := httptest.NewRequest(http.MethodPost, "/foo", new(errorReader))
 	w := httptest.NewRecorder()
 	f.ServeHTTP(w, req)
 	assert.Equal(t, buf, w.Body.Bytes())
+}
+
+func onlyError[T any](v T, err error) error {
+	return err
 }
