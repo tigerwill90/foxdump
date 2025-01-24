@@ -58,6 +58,8 @@ func (m shortResponseWriter) SetWriteDeadline(deadline time.Time) error {
 	return nil
 }
 
+func (m shortResponseWriter) EnableFullDuplex() error { return nil }
+
 func TestMultiWriter_RwErrShortWrite(t *testing.T) {
 	mw := multiWriter{new(shortResponseWriter), bytes.NewBuffer(nil)}
 	_, err := mw.Write([]byte("foobar"))

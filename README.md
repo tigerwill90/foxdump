@@ -32,6 +32,7 @@ Here's a simple example of how to use the Foxdump middleware:
 package main
 
 import (
+	"errors"
 	"github.com/tigerwill90/fox"
 	"github.com/tigerwill90/foxdump"
 	"io"
@@ -48,15 +49,20 @@ func DumpResponse(c fox.Context, buf []byte) {
 }
 
 func main() {
-	f := fox.New(
+	f, err := fox.New(
 		fox.WithMiddleware(foxdump.Middleware(DumpRequest, DumpResponse)),
 	)
+	if err != nil {
+		panic(err)
+	}
 
 	f.MustHandle(http.MethodPost, "/hello/fox", func(c fox.Context) {
 		_, _ = io.Copy(c.Writer(), c.Request().Body)
 	})
 
-	log.Fatalln(http.ListenAndServe(":8080", f))
+	if err = http.ListenAndServe(":8080", f); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatalln(err)
+	}
 }
 ````
 

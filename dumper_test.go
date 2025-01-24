@@ -63,11 +63,12 @@ var failBodyHandler = func(t *testing.T, want []byte) BodyHandler {
 }
 
 func BenchmarkFoxDumpMiddleware(b *testing.B) {
-	f := fox.New(fox.WithMiddleware(Middleware(func(c fox.Context, buf []byte) {
+	f, err := fox.New(fox.WithMiddleware(Middleware(func(c fox.Context, buf []byte) {
 
 	}, func(c fox.Context, buf []byte) {
 
 	})))
+	require.NoError(b, err)
 
 	buf := make([]byte, 1*1024)
 	_, _ = rand.Read(buf)
@@ -148,7 +149,8 @@ func TestBodyDumper_DumpBody(t *testing.T) {
 			_, err := rand.Read(buf)
 			require.NoError(t, err)
 
-			f := fox.New(fox.WithMiddleware(Middleware(tc.req(t, buf), tc.res(t, buf))))
+			f, err := fox.New(fox.WithMiddleware(Middleware(tc.req(t, buf), tc.res(t, buf))))
+			require.NoError(t, err)
 			require.NoError(t, onlyError(f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
 				assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
 			})))
@@ -220,7 +222,8 @@ func TestWithFilter(t *testing.T) {
 			_, err := rand.Read(buf)
 			require.NoError(t, err)
 
-			f := fox.New(fox.WithMiddleware(Middleware(tc.req(t, buf), tc.res(t, buf), WithFilter(tc.filter))))
+			f, err := fox.New(fox.WithMiddleware(Middleware(tc.req(t, buf), tc.res(t, buf), WithFilter(tc.filter))))
+			require.NoError(t, err)
 			require.NoError(t, onlyError(f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
 				assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
 			})))
@@ -238,7 +241,8 @@ func TestBodyDumper_ImplUnwrap(t *testing.T) {
 	_, err := rand.Read(buf)
 	require.NoError(t, err)
 
-	f := fox.New(fox.WithMiddleware(Middleware(nil, func(c fox.Context, got []byte) {})))
+	f, err := fox.New(fox.WithMiddleware(Middleware(nil, func(c fox.Context, got []byte) {})))
+	require.NoError(t, err)
 	f.MustHandle(http.MethodPost, "/foo", func(c fox.Context) {
 		require.Implements(t, (*interface{ Unwrap() http.ResponseWriter })(nil), c.Writer())
 		assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
@@ -255,9 +259,10 @@ func TestBodyDumper_DumpBodyFallback(t *testing.T) {
 	_, err := rand.Read(buf)
 	require.NoError(t, err)
 
-	f := fox.New(fox.WithMiddleware(Middleware(failBodyHandler(t, nil), func(c fox.Context, dump []byte) {
+	f, err := fox.New(fox.WithMiddleware(Middleware(failBodyHandler(t, nil), func(c fox.Context, dump []byte) {
 		assert.Equal(t, buf, dump)
 	})))
+	require.NoError(t, err)
 
 	require.NoError(t, onlyError(f.Handle(http.MethodPost, "/foo", func(c fox.Context) {
 		assert.NoError(t, c.Blob(http.StatusOK, fox.MIMEOctetStream, buf))
