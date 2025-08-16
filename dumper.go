@@ -6,10 +6,11 @@ package foxdump
 
 import (
 	"bytes"
-	"github.com/tigerwill90/fox"
 	"io"
 	"log"
 	"sync"
+
+	"github.com/tigerwill90/fox"
 )
 
 var p = sync.Pool{
