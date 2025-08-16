@@ -3,13 +3,14 @@ package foxdump
 import (
 	"bufio"
 	"bytes"
-	"github.com/stretchr/testify/assert"
-	"github.com/tigerwill90/fox"
 	"io"
 	"net"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/tigerwill90/fox"
 )
 
 var _ fox.ResponseWriter = (*shortResponseWriter)(nil)

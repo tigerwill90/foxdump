@@ -2,10 +2,11 @@ package foxdump
 
 import (
 	"bytes"
-	"github.com/tigerwill90/fox"
 	"io"
 	"net/http"
 	"sync"
+
+	"github.com/tigerwill90/fox"
 )
 
 var copyBufPool = sync.Pool{
