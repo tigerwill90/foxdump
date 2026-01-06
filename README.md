@@ -33,34 +33,32 @@ package main
 
 import (
 	"errors"
-	"github.com/tigerwill90/fox"
-	"github.com/tigerwill90/foxdump"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/tigerwill90/fox"
+	"github.com/tigerwill90/foxdump"
 )
 
-func DumpRequest(c fox.Context, buf []byte) {
+func DumpRequest(c *fox.Context, buf []byte) {
 	log.Println("request:", string(buf))
 }
 
-func DumpResponse(c fox.Context, buf []byte) {
+func DumpResponse(c *fox.Context, buf []byte) {
 	log.Println("response:", string(buf))
 }
 
 func main() {
-	f, err := fox.New(
+	f := fox.MustRouter(
 		fox.WithMiddleware(foxdump.Middleware(DumpRequest, DumpResponse)),
 	)
-	if err != nil {
-		panic(err)
-	}
 
-	f.MustHandle(http.MethodPost, "/hello/fox", func(c fox.Context) {
+	f.MustAdd(fox.MethodPost, "/hello/fox", func(c *fox.Context) {
 		_, _ = io.Copy(c.Writer(), c.Request().Body)
 	})
 
-	if err = http.ListenAndServe(":8080", f); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := http.ListenAndServe(":8080", f); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalln(err)
 	}
 }

@@ -25,7 +25,7 @@ var p = sync.Pool{
 // data is only guaranteed to be valid during the execution of the BodyHandler function. If the data needs to be
 // persisted or used outside the scope of this function, it should be copied to a new byte slice (e.g., using 'copy').
 // Furthermore, 'buf' should be treated as read-only slice to prevent any unintended side effects.
-type BodyHandler func(c fox.Context, buf []byte)
+type BodyHandler func(c *fox.Context, buf []byte)
 
 // Middleware is a convenience function that creates a new BodyDumper middleware instance with the
 // given BodyHandler functions and returns the DumpBody function. Options can be provided to configure the dumper.
@@ -58,7 +58,7 @@ func NewBodyDumper(req BodyHandler, res BodyHandler, opts ...Option) *BodyDumper
 // bodies, if configured to do so, and then calls the BodyHandler function with the body content.
 // See the BodyHandler documentation for guidelines on the correct usage of the body content.
 func (d *BodyDumper) DumpBody(next fox.HandlerFunc) fox.HandlerFunc {
-	return func(c fox.Context) {
+	return func(c *fox.Context) {
 		if d.req == nil && d.res == nil {
 			next(c)
 			return
